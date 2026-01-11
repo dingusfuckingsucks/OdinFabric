@@ -1,6 +1,7 @@
 package com.odtheking.odin.features.impl.skyblock
 
 import com.odtheking.odin.clickgui.settings.impl.BooleanSetting
+import com.odtheking.odin.events.core.on
 import com.odtheking.odin.events.ChatPacketEvent
 import com.odtheking.odin.features.Module
 import com.odtheking.odin.utils.modMessage
@@ -8,7 +9,7 @@ import com.odtheking.odin.utils.sendCommand
 
 object AutoSprint : Module(name = "Auto Sprint", description = "Automatically makes you sprint.") {
     private val bosswarp by BooleanSetting("boss warp", false, desc = "")
-    private val healer by BooleanSetting("healer", false desc = "")
+    private val healer by BooleanSetting("healer", false, desc = "")
     private val pipe by BooleanSetting("pipe", false, desc = "")
     
     private val witherking = setOf(
@@ -36,7 +37,7 @@ object AutoSprint : Module(name = "Auto Sprint", description = "Automatically ma
             if (value.startsWith("[BOSS] Wither King:") && witherking.contains(value)) {
                 pee--
                 modMessage("§5Warping in §4$pee §5more dragons", "§a[Dingus] ")
-                if (healer && pee = 0) sendCommand("p warp")
+                if (healer && pee == 0) sendCommand("p warp")
             }
         }
     }
