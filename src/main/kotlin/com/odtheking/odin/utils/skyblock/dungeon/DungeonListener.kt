@@ -13,14 +13,15 @@ import com.odtheking.odin.features.impl.dungeon.LeapMenu
 import com.odtheking.odin.features.impl.dungeon.LeapMenu.odinSorting
 import com.odtheking.odin.features.impl.dungeon.Mimic
 import com.odtheking.odin.utils.network.WebUtils.hasBonusPaulScore
+import com.odtheking.odin.utils.noControlCodes
 import com.odtheking.odin.utils.romanToInt
 import com.odtheking.odin.utils.skyblock.dungeon.DungeonUtils.getDungeonTeammates
 import com.odtheking.odin.utils.skyblock.dungeon.tiles.Room
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
-import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket
-import net.minecraft.network.protocol.game.ClientboundTabListPacket
+import net.minecraft.network.protocol.game.*
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.player.Player
 import kotlin.jvm.optionals.getOrNull
 
 object DungeonListener {
@@ -80,10 +81,10 @@ object DungeonListener {
         }
 
         onReceive<ClientboundSetPlayerTeamPacket> {
-            val text = parameters?.getOrNull()?.let { it.playerPrefix?.string?.plus(it.playerSuffix?.string) } ?: return@onReceive
+            val text = parameters?.getOrNull()?.let { it.playerPrefix?.string?.plus(it.playerSuffix?.string).noControlCodes } ?: return@onReceive
 
             floorRegex.find(text)?.groupValues?.get(1)?.let {
-                scope.launch(Dispatchers.IO) { paul = hasBonusPaulScore() }
+                if (floor == null) scope.launch(Dispatchers.IO) { paul = hasBonusPaulScore() }
                 floor = Floor.valueOf(it)
             }
 
@@ -118,6 +119,19 @@ object DungeonListener {
                 "blaze done!", "blaze done", "blaze puzzle solved!" ->
                     puzzles.find { it == Puzzle.BLAZE }.let { it?.status = PuzzleStatus.Completed }
             }
+        }
+
+        onReceive<ClientboundRemoveEntitiesPacket> {
+            DungeonUtils.dungeonTeammates.forEach {
+                val id = it.entity?.id ?: return@forEach
+                if (entityIds.contains(id)) it.entity = null
+            }
+        }
+
+        onReceive<ClientboundAddEntityPacket> {
+            if (type == EntityType.PLAYER)
+                DungeonUtils.dungeonTeammates.find { it.entity == null && it.name == mc.level?.getEntity(id)?.name?.string }?.entity =
+                    mc.level?.getEntity(id) as? Player
         }
     }
 

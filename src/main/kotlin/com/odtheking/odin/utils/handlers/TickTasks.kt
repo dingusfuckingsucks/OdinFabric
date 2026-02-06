@@ -3,10 +3,10 @@ package com.odtheking.odin.utils.handlers
 import com.odtheking.odin.events.TickEvent
 import com.odtheking.odin.events.core.on
 import com.odtheking.odin.utils.logError
-import it.unimi.dsi.fastutil.objects.ObjectArrayList
+import java.util.concurrent.CopyOnWriteArrayList
 
 open class TickTask(
-    private val tickDelay: Int,
+    private val ticksPerCycle: Int,
     serverTick: Boolean = false,
     private val task: () -> Unit
 ) {
@@ -17,36 +17,43 @@ open class TickTask(
         else TickTasks.registerClientTask(this)
     }
 
-    fun run() {
-        if (++ticks < tickDelay) return
+    open fun run() {
+        if (++ticks < ticksPerCycle) return
         runCatching(task).onFailure { logError(it, this) }
         ticks = 0
     }
 }
 
-class OneShotTickTask(ticks: Int, serverTick: Boolean = false, task: () -> Unit) : TickTask(ticks, serverTick, task)
+class OneShotTickTask(ticks: Int, serverTick: Boolean = false, task: () -> Unit) : TickTask(ticks, serverTick, task) {
+    override fun run() {
+        super.run()
+        if (ticks == 0) TickTasks.unregister(this)
+    }
+}
 
 fun schedule(ticks: Int, serverTick: Boolean = false, task: () -> Unit) {
     OneShotTickTask(ticks, serverTick, task)
 }
 
 object TickTasks {
-    private val clientTickTasks = ObjectArrayList<TickTask>()
-    private val serverTickTasks = ObjectArrayList<TickTask>()
+    private val clientTickTasks = CopyOnWriteArrayList<TickTask>()
+    private val serverTickTasks = CopyOnWriteArrayList<TickTask>()
 
     fun registerClientTask(task: TickTask) = clientTickTasks.add(task)
     fun registerServerTask(task: TickTask) = serverTickTasks.add(task)
 
-    private fun ObjectArrayList<TickTask>.runTasks() {
-        for (i in indices.reversed()) {
-            val task = this[i]
-            task.run()
-            if (task is OneShotTickTask && task.ticks == 0) removeAt(i)
-        }
+    fun unregister(task: TickTask) {
+        clientTickTasks.remove(task)
+        serverTickTasks.remove(task)
     }
 
     init {
-        on<TickEvent.End> { clientTickTasks.runTasks() }
-        on<TickEvent.Server> { serverTickTasks.runTasks() }
+        on<TickEvent.End> {
+            clientTickTasks.forEach { it.run() }
+        }
+
+        on<TickEvent.Server> {
+            serverTickTasks.forEach { it.run() }
+        }
     }
 }

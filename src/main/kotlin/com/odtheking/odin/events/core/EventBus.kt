@@ -1,8 +1,6 @@
 package com.odtheking.odin.events.core
 
 import com.odtheking.odin.events.PacketEvent
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet
 import net.minecraft.network.protocol.Packet
 import net.minecraft.util.profiling.Profiler
 import net.minecraft.util.profiling.ProfilerFiller
@@ -10,15 +8,15 @@ import net.minecraft.util.profiling.ProfilerFiller
 object EventBus {
 
     @JvmField
-    internal val listenerArrays = Object2ObjectOpenHashMap<Class<out Event>, Array<ListenerEntry<out Event>>>()
+    internal val listenerArrays = mutableMapOf<Class<out Event>, Array<ListenerEntry<out Event>>>()
     @JvmField
-    internal val activeSubscribers = ObjectOpenHashSet<Any>()
+    internal val activeSubscribers = mutableSetOf<Any>()
     @JvmField
-    internal val subscriberClasses = Object2ObjectOpenHashMap<Any, Class<*>>()
+    internal val subscriberClasses = mutableMapOf<Any, Class<*>>()
     @JvmField
-    internal val invokers = Object2ObjectOpenHashMap<Class<out Event>, Invoker>()
+    internal val invokers = HashMap<Class<out Event>, Invoker>()
 
-    private val profilerNameCache = Object2ObjectOpenHashMap<Class<out Event>, String>()
+    private val profilerNameCache = HashMap<Class<out Event>, String>()
 
     fun subscribe(subscriber: Any) {
         if (activeSubscribers.add(subscriber)) {

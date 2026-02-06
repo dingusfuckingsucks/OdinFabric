@@ -60,7 +60,7 @@ object ModuleManager {
             // dungeon
             PuzzleSolvers, BlessingDisplay, LeapMenu, SecretClicked, MapInfo, Mimic, DungeonQueue,
             KeyHighlight, BloodCamp, PositionalMessages, TerracottaTimer, BreakerDisplay, LividSolver,
-            InvincibilityTimer, SpiritBear, DungeonWaypoints, ExtraStats, BetterPartyFinder, Croesus, MageBeam,
+            InvincibilityTimer, SpiritBear, DungeonWaypoints, ExtraStats, BetterPartyFinder, Croesus, MageBeam, DungeonMap,
 
             // floor 7
             TerminalSimulator, TerminalSolver, TerminalTimes, TerminalSounds, TickTimers, ArrowAlign,
@@ -75,7 +75,7 @@ object ModuleManager {
             CommandKeybinds, SlotBinds, Splits,
 
             // nether
-            SupplyHelper, BuildHelper, RemovePerks, NoPre, PearlWaypoints, FreshTools, KuudraInfo, Misc
+            SupplyHelper, BuildHelper, RemovePerks, NoPre, PearlWaypoints, FreshTools, KuudraInfo, Misc, Vesuvius
         )
 
         // hashmap, but would need to keep track when setting values change
@@ -138,14 +138,15 @@ object ModuleManager {
         }
     }
 
-    fun render(context: GuiGraphics, tickCounter: DeltaTracker) {
+    fun render(guiGraphics: GuiGraphics, tickCounter: DeltaTracker) {
         if (mc.level == null || mc.player == null || mc.screen == HudManager || mc.options.hideGui) return
-        context.pose().pushMatrix()
+
+        guiGraphics.pose().pushMatrix()
         val sf = mc.window.guiScale
-        context.pose().scale(1f / sf, 1f / sf)
+        guiGraphics.pose().scale(1f / sf, 1f / sf)
         for (hudSettings in hudSettingsCache) {
-            if (hudSettings.isEnabled) hudSettings.value.draw(context, false)
+            if (hudSettings.isEnabled) hudSettings.value.draw(guiGraphics, false)
         }
-        context.pose().popMatrix()
+        guiGraphics.pose().popMatrix()
     }
 }
